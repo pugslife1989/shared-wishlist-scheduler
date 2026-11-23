@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Private SQLite database & uploaded photos
+*.db
+*.sqlite3
+data/
+photos/
