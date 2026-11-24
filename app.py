@@ -1,6 +1,8 @@
 import os
+import re
 import sqlite3
-from datetime import datetime
+import urllib.request
+from datetime import datetime, date
 from werkzeug.utils import secure_filename
 from flask import Flask, request, redirect, render_template, send_from_directory, Response
 
@@ -20,11 +22,21 @@ def init_db():
             title TEXT NOT NULL,
             url TEXT NOT NULL,
             category TEXT NOT NULL,
+            place_type TEXT DEFAULT 'Food',
             visit_date TEXT NOT NULL,
+            created_date TEXT,
+            thumbnail TEXT,
             visited INTEGER DEFAULT 0,
             photo TEXT
         )
     """)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(places)").fetchall()]
+    if "place_type" not in cols:
+        conn.execute("ALTER TABLE places ADD COLUMN place_type TEXT DEFAULT 'Food'")
+    if "created_date" not in cols:
+        conn.execute("ALTER TABLE places ADD COLUMN created_date TEXT")
+    if "thumbnail" not in cols:
+        conn.execute("ALTER TABLE places ADD COLUMN thumbnail TEXT")
     conn.commit()
     conn.close()
 
@@ -38,20 +50,69 @@ def get_db():
     return conn
 
 
+def fetch_og_image(url):
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+        match = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html, re.I)
+        if not match:
+            match = re.search(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']', html, re.I)
+        if match:
+            return match.group(1)
+    except Exception:
+        pass
+    return ""
+
+
 @app.route("/")
 def index():
     conn = get_db()
-    places = conn.execute("SELECT * FROM places ORDER BY visited ASC, visit_date ASC").fetchall()
+    rows = conn.execute("SELECT * FROM places ORDER BY visited ASC, visit_date ASC").fetchall()
     conn.close()
-    return render_template("index.html", places=places)
+
+    today = date.today()
+    places = []
+    reminders = []
+
+    for r in rows:
+        item = dict(r)
+        try:
+            v_date = datetime.strptime(item["visit_date"], "%Y-%m-%d").date()
+            diff = (v_date - today).days
+            item["days_left"] = diff
+            if not item["visited"] and 0 <= diff <= 3:
+                reminders.append(item)
+        except Exception:
+            item["days_left"] = None
+        places.append(item)
+
+    return render_template("index.html", places=places, reminders=reminders)
 
 
 @app.route("/add", methods=["POST"])
 def add_place():
+    url = request.form["url"].strip()
+    title = request.form["title"].strip()
+    thumb = fetch_og_image(url)
+    today_str = date.today().isoformat()
+
     conn = get_db()
     conn.execute(
-        "INSERT INTO places (title, url, category, visit_date) VALUES (?, ?, ?, ?)",
-        (request.form["title"], request.form["url"], request.form["category"], request.form["visit_date"])
+        "INSERT INTO places (title, url, category, place_type, visit_date, created_date, thumbnail) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (title, url, request.form["category"], request.form.get("place_type", "Food"), request.form["visit_date"], today_str, thumb)
+    )
+    conn.commit()
+    conn.close()
+    return redirect("/")
+
+
+@app.route("/edit/<int:place_id>", methods=["POST"])
+def edit_place(place_id):
+    conn = get_db()
+    conn.execute(
+        "UPDATE places SET title = ?, url = ?, category = ?, place_type = ?, visit_date = ? WHERE id = ?",
+        (request.form["title"], request.form["url"], request.form["category"], request.form.get("place_type", "Food"), request.form["visit_date"], place_id)
     )
     conn.commit()
     conn.close()
@@ -87,7 +148,7 @@ DTSTART;VALUE=DATE:{date_str}
 SUMMARY:[{p['category']}] {p['title']}
 DESCRIPTION:Saved link: {p['url']}
 BEGIN:VALARM
-TRIGGER:-PT12H
+TRIGGER:-PT24H
 ACTION:DISPLAY
 DESCRIPTION:Reminder: {p['title']}
 END:VALARM

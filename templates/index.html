@@ -1,75 +1,584 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Shared Wishlist & Date Scheduler</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; max-width: 540px; margin: 24px auto; padding: 0 16px; }
-        h2 { color: #38bdf8; margin-bottom: 4px; }
-        .sub { color: #94a3b8; font-size: 13px; margin-bottom: 18px; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-        input, select, button { width: 100%; padding: 11px; margin: 6px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; box-sizing: border-box; font-size: 14px; }
-        button { background: #0284c7; border: none; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        button:hover { background: #0369a1; }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-        .Dating { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
-        .Family { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-        .done-badge { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); margin-left: 6px; }
-        .title { font-size: 17px; font-weight: 600; margin: 10px 0 4px; }
-        a { color: #38bdf8; text-decoration: none; font-size: 13px; word-break: break-all; }
-        .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-        .btn-sm { padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: #334155; color: #f8fafc; border: none; cursor: pointer; width: auto; margin: 0; }
-        .btn-went { background: #059669; }
-        .btn-del { background: #991b1b; }
-        img.memory { width: 100%; border-radius: 8px; margin-top: 12px; border: 1px solid #475569; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Places to Go</title>
+<style>
+  :root{--ink:#1c1917;--muted:#78716c;--bg:#faf7f2;--card:#fff;--line:#e7e0d6;
+    --accent:#e4572e;--accent-d:#c7431f;--pill:#f5efe6;--green:#15803d;--radius:18px}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink)}
+  header{position:sticky;top:0;z-index:10;background:rgba(250,247,242,.96);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:14px 18px}
+  header h1{margin:0;font-size:22px;letter-spacing:-.02em}
+  header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  main{max-width:1060px;margin:0 auto;padding:18px 18px 90px}
+  .strip{background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--radius);padding:14px 16px;margin-bottom:18px}
+  .strip h2{margin:0 0 6px;font-size:15px}
+  .strip ul{margin:0;padding-left:18px}
+  .strip li{margin:4px 0}
+  .strip a{color:var(--accent-d)}
+  .overdue{background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:14px 16px;margin-bottom:18px}
+  .overdue h2{margin:0 0 6px;font-size:15px}
+  .overdue p{margin:0 0 8px;color:var(--muted);font-size:13px}
+  .overdue ul{margin:0;padding:0;list-style:none}
+  .overdue li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid #fee2e2}
+  .overdue li:first-child{border-top:0}
+  .overdue .od-info{flex:1;min-width:180px}
+  .overdue .od-info a{color:var(--accent-d)}
+  .overdue .od-when{color:var(--muted);font-size:13px}
+  .overdue button{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink)}
+  .overdue button.went{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+  .toolbar input[type=search]{flex:1;min-width:180px;padding:11px 14px;border:1px solid var(--line);
+    border-radius:999px;font-size:15px;background:#fff}
+  .chip{padding:9px 15px;border:1px solid var(--line);border-radius:999px;background:#fff;
+    font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .chip .ic{font-size:15px;line-height:1}
+  select.chip{display:inline-block}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .addbtn{position:fixed;right:18px;bottom:20px;z-index:20;background:var(--accent);color:#fff;border:0;
+    border-radius:999px;padding:15px 22px;font-size:16px;font-weight:700;cursor:pointer;
+    box-shadow:0 8px 24px rgba(228,87,46,.4)}
+  .addbtn:hover{background:var(--accent-d)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    display:flex;flex-direction:column}
+  .thumb{height:170px;background:linear-gradient(135deg,#f59e0b,#e4572e);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-size:56px;font-weight:800;overflow:hidden}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .body{padding:14px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .tags{display:flex;gap:6px;flex-wrap:wrap}
+  .tag{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--pill)}
+  .tag.dating{background:#fee2e2}.tag.family{background:#dbeafe}
+  .tag.visited{background:#dcfce7;color:var(--green)}
+  .body h3{margin:0;font-size:17px;line-height:1.3}
+  .meta{color:var(--muted);font-size:13px}
+  .actions{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+  .actions button,.actions a{flex:1;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;font-size:14px;cursor:pointer;color:var(--ink);text-decoration:none;min-width:90px}
+  .actions .go{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+  .gallery{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+  .gallery figure{position:relative;margin:0;width:88px}
+  .gallery img{width:88px;height:88px;object-fit:cover;border-radius:10px;display:block;border:1px solid var(--line)}
+  .gallery figcaption{font-size:11px;color:var(--muted);text-align:center;margin-top:3px;line-height:1.2}
+  .gallery button{position:absolute;top:2px;right:2px;width:22px;height:22px;padding:0;border:0;border-radius:50%;
+    background:rgba(0,0,0,.65);color:#fff;font-size:13px;line-height:1;cursor:pointer}
+  .photobar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .photobar .addphoto{padding:9px 13px;border:1px dashed var(--line);border-radius:10px;background:#fffaf5;
+    font-size:13px;cursor:pointer;color:var(--ink)}
+  .photobar .hint{color:var(--muted);font-size:12px}
+
+  .viewtoggle{display:flex;gap:8px;margin-bottom:12px}
+  .viewtoggle button{flex:1;padding:11px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:15px;font-weight:700;cursor:pointer;color:var(--ink)}
+  .viewtoggle button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .calnav{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  .calnav h2{margin:0;flex:1;text-align:center;font-size:18px}
+  .calnav button{padding:9px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink)}
+  .calnav button.today{flex:0}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .caldow{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:6px 0}
+  .calday{min-height:72px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);display:flex;flex-direction:column;gap:4px;overflow:hidden}
+  .calday:hover{border-color:var(--accent)}
+  .calday.other{opacity:.35}
+  .calday.today{border:2px solid var(--accent)}
+  .calday.sel{background:#fff7ed;border-color:var(--accent)}
+  .calday .num{font-size:13px;font-weight:700;line-height:1}
+  .calevt{font-size:11px;line-height:1.25;padding:3px 5px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .calevt.dating{background:#fee2e2;color:#991b1b}
+  .calevt.family{background:#dbeafe;color:#1e40af}
+  .calevt.visited{opacity:.6;text-decoration:line-through}
+  .calmore{font-size:11px;color:var(--muted)}
+  .daydetail{margin-top:16px}
+  .daydetail h3{margin:0 0 10px;font-size:16px}
+  .daydetail .grid{margin-top:0}
+  @media (max-width:640px){.calday{min-height:56px;padding:4px}.calevt{font-size:10px}}
+  .empty{color:var(--muted);text-align:center;padding:48px 16px}
+  dialog{border:0;border-radius:20px;padding:0;width:min(560px,94vw);max-height:92vh}
+  dialog::backdrop{background:rgba(0,0,0,.45)}
+  form{padding:22px}
+  form h2{margin:0 0 14px;font-size:20px}
+  label{display:block;font-size:14px;font-weight:700;margin:14px 0 6px}
+  input[type=text],input[type=url],input[type=date]{width:100%;padding:12px;border:1px solid var(--line);
+    border-radius:12px;font-size:15px;background:#fffaf5}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .seg button{padding:10px 16px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-size:14px}
+  .seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .preview{display:flex;gap:10px;align-items:center;background:#fff7ed;border:1px solid #fed7aa;
+    border-radius:12px;padding:10px;margin-top:10px;font-size:13px}
+  .preview img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+  .err{color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px;margin-top:12px;display:none}
+  .submit{width:100%;margin-top:18px;background:var(--accent);color:#fff;border:0;border-radius:12px;
+    padding:14px;font-size:16px;font-weight:700;cursor:pointer}
+  .close{float:right;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted)}
+  footer{max-width:1060px;margin:0 auto;padding:0 18px 40px;color:var(--muted);font-size:13px}
+  footer a{color:var(--accent-d)}
+</style>
 </head>
 <body>
-    <h2>Shared Wishlist</h2>
-    <div class="sub">Save spots, pick a date &amp; log memories</div>
-
-    <div class="card">
-        <form method="POST" action="/add">
-            <input type="text" name="title" placeholder="Place or activity name (e.g. Tampines Night Market)" required>
-            <input type="url" name="url" placeholder="Paste link (TikTok, IG, Google Maps...)" required>
-            <select name="category">
-                <option value="Dating">Dating</option>
-                <option value="Family">Family</option>
-            </select>
-            <input type="date" name="visit_date" required>
-            <button type="submit">+ Add to Wishlist</button>
-        </form>
+<header><h1>Places to Go</h1><p>One shared list — paste a link, pick Dating or Family, set a Date to visit. Tap "We went!" and the photo picker pops up straight away, so you can add your photos from the visit.</p></header>
+<main>
+  <div class="strip" id="strip" hidden><h2>⏰ Time to actually go</h2><p id="stripNote" style="margin:0 0 6px;color:var(--muted);font-size:13px">Reminders: 3 days before and 1 day before your Date to visit.</p><ul id="stripList"></ul></div>
+  <div class="overdue" id="overdue" hidden><h2>⏰ Overdue — did you go?</h2><p>These places had a Date to visit that has already passed. Tap <b>We went!</b> if you went, or <b>Didn't go</b> to pick a new date.</p><ul id="overdueList"></ul></div>
+  <div class="viewtoggle" role="tablist" aria-label="View">
+    <button type="button" id="viewList" class="on">📋 List</button>
+    <button type="button" id="viewCal">🗓️ Calendar</button>
+  </div>
+  <div id="calView" hidden>
+    <div class="calnav">
+      <button type="button" id="calPrev" aria-label="Previous month">‹ Prev</button>
+      <h2 id="calTitle"></h2>
+      <button type="button" id="calToday" class="today">Today</button>
+      <button type="button" id="calNext" aria-label="Next month">Next ›</button>
     </div>
+    <div class="calgrid" id="calGrid"></div>
+    <div class="daydetail" id="dayDetail"></div>
+  </div>
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Search places…" aria-label="Search places">
+    <button class="chip on" data-f="all"><span class="ic" aria-hidden="true">✨</span>All</button>
+    <button class="chip" data-f="Dating"><span class="ic" aria-hidden="true">❤️</span>Dating</button>
+    <button class="chip" data-f="Family"><span class="ic" aria-hidden="true">👨‍👩‍👧</span>Family</button>
+    <button class="chip" data-f="want"><span class="ic" aria-hidden="true">📍</span>Want to go</button>
+    <button class="chip" data-f="visited"><span class="ic" aria-hidden="true">✅</span>Visited</button>
+    <select id="typeF" class="chip" aria-label="Filter by type">
+      <option value="">✨ All types</option><option>🍜 Food</option><option>☕ Cafe</option>
+      <option>📍 Place</option><option>🎟️ Activity</option>
+    </select>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>No places yet — tap <b>+ Add a place</b> and paste the first link.</div>
+</main>
+<button class="addbtn" id="openAdd">+ Add a place</button>
 
-    {% for p in places %}
-    <div class="card">
-        <div>
-            <span class="badge {{ p.category }}">{{ p.category }}</span>
-            <span style="font-size: 13px; color: #94a3b8; margin-left: 8px;">📅 {{ p.visit_date }}</span>
-            {% if p.visited %}<span class="badge done-badge">✓ We went!</span>{% endif %}
-        </div>
-        <div class="title">{{ p.title }}</div>
-        <a href="{{ p.url }}" target="_blank">{{ p.url }}</a>
-
-        {% if p.photo %}
-            <img class="memory" src="/photos/{{ p.photo }}" alt="Outing memory">
-        {% endif %}
-
-        <div class="actions">
-            <a class="btn-sm" href="/calendar/{{ p.id }}">⏰ Add Calendar Reminder</a>
-            <form method="POST" action="/delete/{{ p.id }}" style="margin:0;">
-                <button class="btn-sm btn-del" type="submit">Delete</button>
-            </form>
-        </div>
-
-        {% if not p.visited %}
-        <form method="POST" action="/went/{{ p.id }}" enctype="multipart/form-data" style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px;">
-            <input type="file" name="photo" accept="image/*" style="padding: 6px; font-size: 12px;">
-            <button class="btn-sm btn-went" type="submit" style="width: 100%; margin-top: 6px;">✓ We went! (Save Photo)</button>
-        </form>
-        {% endif %}
+<dialog id="dlg">
+  <form id="addForm" method="dialog">
+    <button class="close" type="button" id="closeDlg" aria-label="Close">×</button>
+    <h2 id="dlgTitle">Add a place</h2>
+    <label for="link">Link</label>
+    <input type="url" id="link" placeholder="https://…" required>
+    <div style="margin-top:8px"><button type="button" class="chip" id="lookup">Look up this link</button>
+      <span id="count" style="color:var(--muted);font-size:12px"></span></div>
+    <div class="preview" id="preview" hidden></div>
+    <label for="name">Place name</label>
+    <input type="text" id="name" maxlength="200" placeholder="e.g. Tiong Bahru Bakery" required>
+    <label>Who's it for?</label>
+    <div class="seg" id="catSeg">
+      <button type="button" data-v="Dating" class="on">Dating — just the two of us</button>
+      <button type="button" data-v="Family">Family</button>
     </div>
-    {% endfor %}
+    <label>Type</label>
+    <div class="seg" id="typeSeg">
+      <button type="button" data-v="Food" class="on">Food</button>
+      <button type="button" data-v="Cafe">Cafe</button>
+      <button type="button" data-v="Place">Place</button>
+      <button type="button" data-v="Activity">Activity</button>
+    </div>
+    <label for="visitDate">Date to visit <span style="color:var(--accent-d)">*</span> <span style="font-weight:400;color:var(--muted)">— required, reminders 3 days and 1 day before</span></label>
+    <input type="date" id="visitDate" required>
+    <div class="err" id="err"></div>
+    <button class="submit" type="submit">Add to our list</button>
+  </form>
+</dialog>
+
+<footer>Shared household list — password protected. <a href="/api/export.csv">Download as CSV</a> (same columns as the Google Sheet backup). <a href="/logout">Log out</a> · Add this page to your home screen: iPhone Safari → Share → Add to Home Screen; Android Chrome → menu → Add to Home screen.</footer>
+
+<dialog id="goAgainDlg">
+  <form id="goAgainForm" method="dialog">
+    <button class="close" type="button" id="closeGoAgain" aria-label="Close">×</button>
+    <h2 id="goAgainTitle">Going again?</h2>
+    <p id="goAgainDesc" style="color:var(--muted);font-size:14px;margin:0 0 4px">Pick the next Date to visit for <b id="goAgainName"></b>. Reminders will fire 3 days and 1 day before the new date, and your photos from the last visit stay on the card.</p>
+    <label for="goAgainDate">Next Date to visit <span style="color:var(--accent-d)">*</span> <span style="font-weight:400;color:var(--muted)">— required</span></label>
+    <input type="date" id="goAgainDate" required>
+    <div class="err" id="goAgainErr"></div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button type="button" id="cancelGoAgain" style="flex:1;padding:14px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:16px;font-weight:700;cursor:pointer">Cancel</button>
+      <button class="submit" type="submit" id="goAgainSubmit" style="flex:2;margin-top:0">Save &amp; go again</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+let places=[], filter="all", editingId=null, previewImg="";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let view="list";
+const _now=new Date();
+let calYear=_now.getFullYear(), calMonth=_now.getMonth();
+let selectedDay="";
+function isoLocal(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return `${y}-${m}-${dd}`;}
+selectedDay=isoLocal(_now);
+function visitDateOf(p){return p.visit_date||p.remind_on||"";}
+function clashFor(visitDate, excludeId){
+  /* One place per day, client-side: another place already on this
+     date. The place being edited (excludeId) keeping its own date
+     is not a clash. The server enforces the same rule, so this is
+     just the instant warning — the server error is the real guard. */
+  if(!visitDate) return null;
+  return places.find(p=>visitDateOf(p)===visitDate&&p.id!==excludeId)||null;
+}
+function clashMessage(p, visitDate){
+  return `You already have ${p.name} on ${visitDate} — pick a different Date to visit.`;
+}
+function visitCountNum(p){
+  const n=typeof p.visit_count==="number"?p.visit_count:parseInt(p.visit_count,10);
+  return isNaN(n)?(p.status==="visited"?1:0):n;
+}
+function everVisited(p){
+  /* Visited tab = places that have EVER been visited (for now).
+     A place flipped back to Want to go via "Go again" still shows
+     here, because it has been visited before — so it can appear
+     in both the Visited and the Want to go tabs. */
+  return visitCountNum(p)>0;
+}
+function filteredPlaces(){
+  const q=$("#q").value.toLowerCase(), tf=$("#typeF").value;
+  return places.filter(p=>{
+    if(filter==="Dating"||filter==="Family") if(p.category!==filter) return false;
+    if(filter==="want"&&p.status!=="want") return false;
+    if(filter==="visited"&&!everVisited(p)) return false;
+    if(tf&&p.type!==tf) return false;
+    if(q&&!(p.name+" "+p.link).toLowerCase().includes(q)) return false;
+    return true;});
+}
+function cardHTML(p){
+  return `<article class="card">
+    <div class="thumb">${cover(p)}</div>
+    <div class="body">
+      <div class="tags"><span class="tag ${p.category.toLowerCase()}">${esc(p.category)}</span>
+      <span class="tag">${esc(p.type)}</span>
+      ${p.status==="visited"?'<span class="tag visited">Visited \u2713</span>':(everVisited(p)?'<span class="tag visited">Visited before \u2713</span>':"")}</div>
+      <h3>${esc(p.name)}</h3>
+      <div class="meta">${esc(p.date_added)}${(p.visit_date||p.remind_on)?` \u00b7 visit ${esc(p.visit_date||p.remind_on)}`:""}${visitCount(p)?` \u00b7 ${esc(visitCount(p))}`:""}</div>
+      ${ (p.photos||[]).length ? `<div class="gallery">${(p.photos||[]).map(ph=>`<figure><img src="${esc(ph.url)}" alt="Photo from ${esc(p.name)}" loading="lazy"><figcaption>${esc(photoDate(ph))}</figcaption><button type="button" data-act="delphoto" data-id="${p.id}" data-photo="${ph.id}" aria-label="Delete this photo">\u00d7</button></figure>`).join("")}</div>
+      ${p.status==="visited"
+        ? `<div class="photobar"><label class="addphoto">\ud83d\udcf7 Add a photo<input type="file" accept="image/*" data-photo-for="${p.id}" hidden></label><span class="hint">${(p.photos||[]).length} photo${(p.photos||[]).length===1?"":"s"} \u00b7 resized, max ~2 MB each</span></div>`
+        : `<div class="photobar"><span class="hint">\ud83d\udcf7 ${(p.photos||[]).length} photo${(p.photos||[]).length===1?"":"s"} saved \u2014 mark Visited to add more</span></div>`}` : ""}
+      <div class="actions">
+        <a href="${esc(p.link)}" target="_blank" rel="noopener">Open link \u2197</a>
+        <button data-act="toggle" data-id="${p.id}">${p.status==="want"?"We went! \u2713":"Back to want"}</button>
+        <button data-act="edit" data-id="${p.id}">Edit</button>
+        <button data-act="del" data-id="${p.id}">Delete</button>
+      </div></div></article>`;
+}
+function setView(v){
+  view=v;
+  $("#viewList").classList.toggle("on",v==="list");
+  $("#viewCal").classList.toggle("on",v==="calendar");
+  $("#calView").hidden=v!=="calendar";
+  $("#grid").style.display=v==="calendar"?"none":"";
+  $("#empty").hidden=true;
+  if(v==="calendar") renderCalendar(); else render();
+}
+function renderCalendar(){
+  const title=$("#calTitle");
+  const monthName=new Date(calYear,calMonth,1).toLocaleDateString("en-SG",{month:"long",year:"numeric"});
+  title.textContent=monthName;
+  const todayStr=isoLocal(new Date());
+  const first=new Date(calYear,calMonth,1);
+  const startDow=first.getDay(); // 0=Sun
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysPrev=new Date(calYear,calMonth,0).getDate();
+  const list=filteredPlaces();
+  const byDay={};
+  list.forEach(p=>{const d=visitDateOf(p); if(!d) return; (byDay[d]=byDay[d]||[]).push(p);});
+  let cells=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=>`<div class="caldow">${d}</div>`).join("");
+  const total=42; // 6 weeks, keeps height stable
+  for(let i=0;i<total;i++){
+    let dayNum, dateObj, other=false;
+    if(i<startDow){dayNum=daysPrev-startDow+1+i; dateObj=new Date(calYear,calMonth-1,dayNum); other=true;}
+    else if(i<startDow+daysInMonth){dayNum=i-startDow+1; dateObj=new Date(calYear,calMonth,dayNum);}
+    else {dayNum=i-startDow-daysInMonth+1; dateObj=new Date(calYear,calMonth+1,dayNum); other=true;}
+    const ds=isoLocal(dateObj);
+    const evts=(byDay[ds]||[]).slice().sort((a,b)=>a.name.localeCompare(b.name));
+    const shown=evts.slice(0,3);
+    cells+=`<button type="button" class="calday${other?" other":""}${ds===todayStr?" today":""}${ds===selectedDay?" sel":""}" data-day="${ds}">
+      <span class="num">${dayNum}</span>
+      ${shown.map(p=>`<span class="calevt ${p.category.toLowerCase()}${p.status==="visited"?" visited":""}">${p.status==="visited"?"\u2713 ":""}${esc(p.name)}</span>`).join("")}
+      ${evts.length>3?`<span class="calmore">+${evts.length-3} more</span>`:""}
+    </button>`;
+  }
+  $("#calGrid").innerHTML=cells;
+  renderDayDetail();
+}
+function renderDayDetail(){
+  const list=filteredPlaces().filter(p=>visitDateOf(p)===selectedDay)
+    .slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const d=new Date(selectedDay+"T12:00:00Z");
+  const label=d.toLocaleDateString("en-SG",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
+  $("#dayDetail").innerHTML=`<h3>${esc(label)} — ${list.length} place${list.length===1?"":"s"}</h3>`+
+    (list.length?`<div class="grid">${list.map(cardHTML).join("")}</div>`
+      :`<p style="color:var(--muted)">No places planned that day. Tap + Add a place and pick this date as the Date to visit.</p>`);
+}
+$("#viewList").addEventListener("click",()=>setView("list"));
+$("#viewCal").addEventListener("click",()=>setView("calendar"));
+$("#calPrev").addEventListener("click",()=>{calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar();});
+$("#calNext").addEventListener("click",()=>{calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar();});
+$("#calToday").addEventListener("click",()=>{const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); selectedDay=isoLocal(n); renderCalendar();});
+$("#calGrid").addEventListener("click",e=>{const b=e.target.closest(".calday"); if(!b) return; selectedDay=b.dataset.day; const d=new Date(selectedDay+"T12:00:00Z"); calYear=d.getUTCFullYear(); calMonth=d.getUTCMonth(); renderCalendar();});
+function segVal(id){return document.querySelector(`#${id} button.on`)?.dataset.v}
+function segSet(id,v){$$(`#${id} button`).forEach(b=>b.classList.toggle("on",b.dataset.v===v))}
+$$(".seg").forEach(g=>g.addEventListener("click",e=>{if(e.target.dataset.v)segSet(g.id,e.target.dataset.v)}));
+$$(".toolbar .chip[data-f]").forEach(b=>b.addEventListener("click",()=>{
+  filter=b.dataset.f; $$(".toolbar .chip[data-f]").forEach(x=>x.classList.toggle("on",x===b)); render();}));
+$("#q").addEventListener("input",render); $("#typeF").addEventListener("change",render);
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function cover(p){return p.image_url?`<img src="${esc(p.image_url)}" alt="" loading="lazy" onerror="this.parentElement.textContent='${esc((p.name||"?")[0].toUpperCase())}'">`:esc((p.name||"?")[0].toUpperCase())}
+function photoDate(ph){return ph.display_date||ph.taken_date||(ph.created_at||"").slice(0,10)||""}
+function visitCount(p){
+  /* How many times this place has been visited. The server stores
+     visit_count and increments it only on a want -> visited tap.
+     Legacy rows without it fall back to 1 if Visited, 0 otherwise.
+     Shown only once visited at least once — never-visited places
+     show no count, and the count never goes down. */
+  const n=visitCountNum(p);
+  const c=n;
+  if(!c) return "";
+  return c===1?"Visited 1 time":`Visited ${c} times`;
+}
+async function load(){places=await (await fetch("/api/places")).json(); render();}
+function render(){
+  /* Local calendar date, not UTC: a place dated today is NOT
+     overdue, and the 3-day / 1-day strip counts from today local.
+     (Using toISOString() would give yesterday's date in Singapore
+     after midnight UTC, i.e. 8am SGT.) */
+  const q=$("#q").value.toLowerCase(), tf=$("#typeF").value, today=isoLocal(new Date());
+  // Date to visit — reminders 3 days before AND 1 day before.
+  // The strip shows Want-to-go places whose visit date is coming up:
+  // 3 days away (first reminder), 1 day away (second reminder),
+  // today. Places already past their date are NOT in the strip —
+  // they are in the overdue section above it instead. Places more
+  // than 3 days away are not in the strip yet — their reminders have
+  // not fired. Dates are parsed as UTC noon to avoid timezone day shifts.
+  const daysTo=d=>Math.round((new Date(d+"T12:00:00Z")-new Date(today+"T12:00:00Z"))/86400000);
+  const visitDate=p=>p.visit_date||p.remind_on||"";
+  const due=places.filter(p=>p.status==="want"&&visitDate(p)&&daysTo(visitDate(p))>=0&&daysTo(visitDate(p))<=3)
+    .sort((a,b)=>visitDate(a).localeCompare(visitDate(b)));
+  $("#strip").hidden=!due.length;
+  $("#stripList").innerHTML=due.map(p=>{
+    const n=daysTo(visitDate(p));
+    const when=n===0?"📍 Going today!":
+      n===1?"🔔 Reminder — 1 day before (going tomorrow)":
+      n===3?"🔔 Reminder — 3 days before":
+      `In ${n} days`;
+    return `<li><a href="${esc(p.link)}" target="_blank" rel="noopener">${esc(p.name)}</a> — ${esc(p.category)}, going ${esc(visitDate(p))} · ${when}</li>`;
+  }).join("");
+  /* Overdue prompt: Want-to-go places whose Date to visit is before
+     today (local date). A place dated today is NOT overdue, and
+     Visited places are never overdue. They stay in the Want-to-go
+     list until one of the two buttons is chosen — "We went!" marks
+     them Visited (photo picker pops out, visit count +1), "Didn't go"
+     asks for a new Date to visit. */
+  const overdue=places.filter(p=>p.status==="want"&&visitDate(p)&&visitDate(p)<today)
+    .sort((a,b)=>visitDate(a).localeCompare(visitDate(b)));
+  $("#overdue").hidden=!overdue.length;
+  $("#overdueList").innerHTML=overdue.map(p=>{
+    const n=daysTo(visitDate(p));
+    const ago=-n;
+    return `<li><span class="od-info"><a href="${esc(p.link)}" target="_blank" rel="noopener">${esc(p.name)}</a> — ${esc(p.category)}<br><span class="od-when">Planned ${esc(visitDate(p))} · ${ago} day${ago===1?"":"s"} overdue</span></span>
+      <button type="button" class="went" data-act="overdue-went" data-id="${p.id}">We went! ✓</button>
+      <button type="button" data-act="overdue-didnt" data-id="${p.id}">Didn't go</button></li>`;
+  }).join("");
+  const list=filteredPlaces();
+  $("#empty").hidden=list.length>0||view==="calendar";
+  $("#grid").innerHTML=list.map(cardHTML).join("");
+  if(view==="calendar") renderCalendar();
+}
+/* "We went!": mark a Want-to-go place Visited. Pops the photo
+   picker out IMMEDIATELY, in this tap — the file picker must be
+   opened synchronously inside the user's tap gesture, or browsers
+   (especially iOS Safari) block .click() as not user-initiated.
+   So: open a throwaway picker now, fire the PATCH in parallel, and
+   only upload the chosen file once the PATCH has finished (the
+   server refuses photos on a Want-to-go place, 403). The PATCH
+   increments visit_count by 1 (server-side, want -> visited only).
+   If the user cancels the picker, the place is still marked Visited
+   — they can add photos later from the card. Used by the card
+   "We went!" button and by the overdue section's "We went!" button. */
+function markWent(p){
+  const id=p.id;
+  const picker=document.createElement("input");
+  picker.type="file"; picker.accept="image/*"; picker.hidden=true;
+  document.body.appendChild(picker);
+  const patchPromise=fetch(`/api/places/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"visited"})});
+  let done=false;
+  const finish=async(file)=>{
+    if(done) return; done=true; picker.remove();
+    try{await patchPromise;}catch(e){}
+    if(file){
+      const fd=new FormData(); fd.append("photo",file);
+      const r=await fetch(`/api/places/${id}/photos`,{method:"POST",body:fd});
+      if(!r.ok){const d=await r.json().catch(()=>({})); alert(d.error||"Something went wrong uploading that photo. Please try again.");}
+    }
+    load();
+  };
+  picker.addEventListener("change",()=>finish(picker.files[0]||null));
+  picker.addEventListener("cancel",()=>finish(null));
+  /* Fallback for browsers that do not fire "cancel": when the
+     picker closes, the window regains focus. Arm that listener
+     after 1s so the focus change from opening the picker itself
+     does not trigger it. finish() is guarded, so a pick followed
+     by the focus event cannot double-upload. */
+  setTimeout(()=>{window.addEventListener("focus",function onReturn(){
+    /* If the user picked a file, upload it — do not discard it
+       as a cancel. Only a genuinely empty picker counts as a
+       cancel, and either way the existing photos are untouched:
+       finish() only ever uploads one new file or uploads nothing;
+       it never clears the place's photos. */
+    setTimeout(()=>{if(!done) finish(picker.files[0]||null);},300);
+  },{once:true});},1000);
+  picker.click();
+}
+for(const _el of [$("#grid"),$("#dayDetail")]) _el.addEventListener("click",async e=>{
+  const dp=e.target.closest("button[data-act='delphoto']");
+  if(dp){if(confirm("Delete this photo?")){const r=await fetch(`/api/places/${dp.dataset.id}/photos/${dp.dataset.photo}`,{method:"DELETE"}); if(!r.ok) alert("Couldn't delete that photo — please try again."); load();} return;}
+  const b=e.target.closest("button[data-act]"); if(!b) return;
+  const id=+b.dataset.id, p=places.find(x=>x.id===id); if(!p) return;
+  if(b.dataset.act==="toggle"){
+    const goingVisited=p.status==="want";
+    if(goingVisited){
+      /* "We went!" — markWent() pops the photo picker out in this
+         tap (synchronous, so iOS Safari allows it) and PATCHes to
+         Visited in parallel; visit_count +1 on the server. */
+      markWent(p);
+      return;
+    }
+    /* Going again: a Visited place is being flipped back to Want to
+       go, so ask for the NEXT Date to visit first. The dialog is
+       required — only after a valid date is picked does the place
+       flip to "want" with the new date (which replaces the old one
+       and re-arms the 3-day / 1-day reminders). Cancelling changes
+       nothing: the place stays Visited and its photos stay put. */
+    openGoAgain(p);
+    return;
+  }
+  if(b.dataset.act==="del"){if(confirm(`Delete "${p.name}"?`)){await fetch(`/api/places/${id}`,{method:"DELETE"}); load();}}
+  if(b.dataset.act==="edit"){editingId=id; $("#dlgTitle").textContent="Edit place";
+    $("#link").value=p.link; $("#name").value=p.name; $("#visitDate").value=p.visit_date||p.remind_on||"";
+    segSet("catSeg",p.category); segSet("typeSeg",p.type); previewImg=p.image_url||"";
+    $("#dlg").showModal();}
+});
+/* Overdue section buttons. "We went!" reuses markWent() — the same
+   flow as the card button, so the photo picker pops out in this tap
+   and visit_count goes up by 1. "Didn't go" reuses the "Go again"
+   dialog (mode "didntgo"): it asks for a new Date to visit, with
+   the old date shown as a reference, and the same live clash
+   warning / server-side refusal as "Go again". */
+$("#overdueList").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-act]"); if(!b) return;
+  const id=+b.dataset.id, p=places.find(x=>x.id===id); if(!p) return;
+  if(b.dataset.act==="overdue-went") markWent(p);
+  if(b.dataset.act==="overdue-didnt") openGoAgain(p, "didntgo");
+});
+for(const _el of [$("#grid"),$("#dayDetail")]) _el.addEventListener("change",async e=>{
+  const input=e.target.closest("input[data-photo-for]"); if(!input||!input.files.length) return;
+  const id=input.dataset.photoFor, fd=new FormData(); fd.append("photo",input.files[0]);
+  const r=await fetch(`/api/places/${id}/photos`,{method:"POST",body:fd});
+  if(!r.ok){const d=await r.json().catch(()=>({})); alert(d.error||"Something went wrong uploading that photo. Please try again.");}
+  load();
+});
+/* "Go again" prompt: tapping "Back to want" on a Visited place
+   opens a dialog asking for the next Date to visit (required).
+   Cancel leaves the place Visited, photos untouched. Confirming
+   PATCHes status "want" + the new visit_date in one go — the
+   backend validates the date and never touches the photos table,
+   so existing photos survive the flip. */
+let goAgainId=null, goAgainMode="again";
+function openGoAgain(p, mode){
+  /* Two uses of one dialog:
+     - "again" (from "Back to want" on a Visited place): pick the NEXT
+       Date to visit before flipping back to Want to go.
+     - "didntgo" (from "Didn't go" on an overdue place): the planned
+       date passed without going — pick a NEW Date to visit instead.
+       The place stays Want to go; only the date changes, so the
+       3-day / 1-day reminders and the calendar move to the new date.
+     Both: date is required and starts empty, the old date is shown
+     as a reference, the live clash warning and the server's 400
+     refusal apply, photos are untouched, and Cancel changes nothing. */
+  goAgainMode=mode||"again";
+  goAgainId=p.id;
+  const oldDate=p.visit_date||p.remind_on||"";
+  $("#goAgainName").textContent=p.name;
+  if(goAgainMode==="didntgo"){
+    $("#goAgainTitle").textContent="Didn't go?";
+    $("#goAgainDesc").innerHTML=`You didn't make it to <b>${esc(p.name)}</b> — it was planned for <b>${esc(oldDate)}</b>. Pick a new Date to visit. Reminders will fire 3 days and 1 day before the new date, and your photos stay on the card.`;
+    $("#goAgainSubmit").textContent="Save new date";
+  }else{
+    $("#goAgainTitle").textContent="Going again?";
+    $("#goAgainDesc").innerHTML=`Pick the next Date to visit for <b>${esc(p.name)}</b>. Reminders will fire 3 days and 1 day before the new date, and your photos from the last visit stay on the card.`;
+    $("#goAgainSubmit").textContent="Save & go again";
+  }
+  $("#goAgainDate").value="";
+  const err=$("#goAgainErr"); err.style.display="none"; err.textContent="";
+  $("#goAgainDlg").showModal();
+}
+$("#closeGoAgain").addEventListener("click",()=>{goAgainId=null; $("#goAgainDlg").close();});
+$("#cancelGoAgain").addEventListener("click",()=>{goAgainId=null; $("#goAgainDlg").close();});
+$("#goAgainForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const err=$("#goAgainErr"); err.style.display="none";
+  const visitDate=$("#goAgainDate").value;
+  if(!visitDate){err.textContent="Please pick a Date to visit — it is required."; err.style.display="block"; return;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(visitDate)){err.textContent="Please pick a valid date."; err.style.display="block"; return;}
+  const clash=clashFor(visitDate, goAgainId);
+  if(clash){err.textContent=clashMessage(clash, visitDate); err.style.display="block"; return;}
+  const r=await fetch(`/api/places/${goAgainId}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"want",visit_date:visitDate})});
+  if(!r.ok){const d=await r.json().catch(()=>({})); err.textContent=d.error||"Something went wrong. Please try again."; err.style.display="block"; return;}
+  const _d=new Date(visitDate+"T12:00:00Z"); calYear=_d.getUTCFullYear(); calMonth=_d.getUTCMonth(); selectedDay=visitDate;
+  goAgainId=null; $("#goAgainDlg").close(); load();
+});
+$("#openAdd").addEventListener("click",()=>{editingId=null; $("#dlgTitle").textContent="Add a place";
+  $("#addForm").reset(); segSet("catSeg","Dating"); segSet("typeSeg","Food");
+  $("#preview").hidden=true; previewImg=""; $("#err").style.display="none"; $("#dlg").showModal();});
+$("#closeDlg").addEventListener("click",()=>$("#dlg").close());
+$("#name").addEventListener("input",e=>{$("#count").textContent=`${e.target.value.length}/200`});
+async function lookup(){
+  const url=$("#link").value.trim(); if(!url) return;
+  const r=await fetch("/api/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})});
+  const d=await r.json();
+  if(d.title&&!$("#name").value) $("#name").value=d.title;
+  previewImg=d.image_url||"";
+  const pv=$("#preview");
+  pv.hidden=!(d.title||d.image_url);
+  pv.innerHTML=`${d.image_url?`<img src="${esc(d.image_url)}" alt="">`:""}<div><b>${esc(d.title||"No title found")}</b><br><span style="color:var(--muted)">Thumbnail ${d.image_url?"found":"not available — a letter cover will be used"}</span></div>`;
+  $("#count").textContent=`${$("#name").value.length}/200`;
+}
+$("#lookup").addEventListener("click",lookup);
+$("#link").addEventListener("change",lookup);
+$("#addForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const err=$("#err"); err.style.display="none";
+  const name=$("#name").value.trim();
+  if(name.length>200){err.textContent="That name is over 200 characters — please shorten it."; err.style.display="block"; return;}
+  const visitDate=$("#visitDate").value;
+  if(!visitDate){err.textContent="Please pick a Date to visit — it is required."; err.style.display="block"; return;}
+  const clash=clashFor(visitDate, editingId);
+  if(clash){err.textContent=clashMessage(clash, visitDate); err.style.display="block"; return;}
+  const body={link:$("#link").value.trim(),name,category:segVal("catSeg"),type:segVal("typeSeg"),
+    visit_date:visitDate,image_url:previewImg};
+  const url=editingId?`/api/places/${editingId}`:"/api/places";
+  const r=await fetch(url,{method:editingId?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok){const d=await r.json().catch(()=>({})); err.textContent=d.error||"Something went wrong. Please try again."; err.style.display="block"; return;}
+  const _vd=$("#visitDate").value;
+  if(_vd){const _d=new Date(_vd+"T12:00:00Z"); calYear=_d.getUTCFullYear(); calMonth=_d.getUTCMonth(); selectedDay=_vd;}
+  $("#dlg").close(); load();
+});
+/* Live clash warning as soon as a date is picked — same rule as
+   on submit, so the user sees it before tapping the save button. */
+$("#visitDate").addEventListener("change",()=>{
+  const err=$("#err"), v=$("#visitDate").value, clash=clashFor(v, editingId);
+  if(clash){err.textContent=clashMessage(clash, v); err.style.display="block";}
+  else{err.style.display="none";}
+});
+$("#goAgainDate").addEventListener("change",()=>{
+  const err=$("#goAgainErr"), v=$("#goAgainDate").value, clash=clashFor(v, goAgainId);
+  if(clash){err.textContent=clashMessage(clash, v); err.style.display="block";}
+  else{err.style.display="none";}
+});
+load();
+</script>
 </body>
 </html>
