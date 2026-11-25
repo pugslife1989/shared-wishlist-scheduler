@@ -1,16 +1,18 @@
 services:
   wishlist-app:
-    build: .          # Hint: current directory is a single dot
-    container_name: shared-wishlist-scheduler   # Hint: e.g., shared-wishlist-scheduler
-    restart: unless-stopped                # Hint: auto-restart unless manually stopped
+    build: .          
+    container_name: shared-wishlist-scheduler   
+    restart: unless-stopped                
     ports:
-      - 5000:5000      # Hint: both match your Flask/Gunicorn port
+      - 5000:5000      
     volumes:
-      - wishlist_data:/data                 # Hint: name your persistent volume (e.g., wishlist_data)
+      - wishlist_data:/data                 
+    env_file:
+      - .env
     environment:
-      - DB_PATH=/data.places.db       # Hint: must sit inside /data (e.g., /data/places.db)
-      - PHOTOS_DIR=/data/photos  # Hint: must sit inside /data (e.g., /data/photos)
-      - PORT=5000                     # Hint: 5000
-
+      - DB_PATH=/data/places.db
+      - PHOTOS_DIR=/data/photos
+      - PORT=5000
+      - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env — see .env.example}
 volumes:
-  wishlist_data:                  # Hint: must match the exact volume name used above
+  wishlist_data:

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Places to Go — Log in</title>
+    <script src="https://tailwindcss.com"></script>
+    <style>body { background-color: #faf7f2; color: #1c1917; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }</style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm bg-white border border-stone-200 rounded-2xl p-7 shadow-sm">
+        <h1 class="text-2xl font-bold tracking-tight mb-1.5">Places to Go</h1>
+        <p class="text-xs text-stone-500 mb-6">Enter the shared password to see our list.</p>
+        {% if error %}
+            <div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 mb-4">{{ error }}</div>
+        {% endif %}
+        <form method="POST" action="/login" class="space-y-3.5">
+            <input type="password" name="password" placeholder="Shared password" required autofocus
+                   class="w-full border border-stone-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-stone-400">
+            <button type="submit" class="w-full bg-[#d96343] hover:bg-[#c55335] text-white font-semibold text-sm py-2.5 rounded-xl transition">
+                Log in
+            </button>
+        </form>
+    </div>
+</body>
+</html>

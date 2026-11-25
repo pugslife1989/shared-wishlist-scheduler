@@ -117,11 +117,42 @@
   .close{float:right;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted)}
   footer{max-width:1060px;margin:0 auto;padding:0 18px 40px;color:var(--muted);font-size:13px}
   footer a{color:var(--accent-d)}
+
+  .listbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+  .listbar select{flex:1;min-width:160px;padding:11px;border:1px solid var(--line);border-radius:999px;font-size:15px;background:#fff}
+  .listbar .who{color:var(--muted);font-size:13px}
+  .sync{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);padding:14px 16px;margin-bottom:18px}
+  .sync h2{margin:0 0 6px;font-size:15px}
+  .sync p{margin:0 0 10px;color:var(--muted);font-size:13px}
+  .sync .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .sync input{flex:1;min-width:200px;padding:11px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff}
+  .sync button,.sync a{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink);text-decoration:none}
+  .sync .warn{margin-top:8px;font-size:12px}
+  .memberrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+  .memberrow:first-of-type{border-top:0}
+  .memberrow .nm{flex:1}
 </style>
 </head>
 <body>
-<header><h1>Places to Go</h1><p>One shared list — paste a link, pick Dating or Family, set a Date to visit. Tap "We went!" and the photo picker pops up straight away, so you can add your photos from the visit.</p></header>
+<header><h1>Places to Go</h1><p>Your lists — paste a link, pick Dating or Family, set a Date to visit. Tap "We went!" and the photo picker pops up straight away, so you can add your photos from the visit.</p><p style="margin-top:6px">Logged in as <b id="meName">…</b> · <a href="/logout" style="color:var(--accent-d)">Log out</a></p></header>
 <main>
+  <div class="listbar">
+    <select id="listSel" aria-label="Choose a list"></select>
+    <button class="chip" id="newListBtn" type="button">＋ New list</button>
+    <button class="chip" id="manageListBtn" type="button">⚙️ Manage this list</button>
+    <span class="who" id="listOwner"></span>
+  </div>
+  <div class="sync" id="sync" hidden>
+    <h2>📅 Sync this list to iPhone Calendar</h2>
+    <p>Subscribe once — this list's Want-to-go dates appear in Apple Calendar, with reminders 3 days and 1 day before each Date to visit. Only members of this list can see this link.</p>
+    <div class="row">
+      <input id="feedUrl" readonly onclick="this.select()" aria-label="Calendar feed URL">
+      <button type="button" id="copyFeed">Copy link</button>
+      <a id="subscribeFeed" href="#">Subscribe on this iPhone</a>
+      <button type="button" id="regenFeed">Regenerate link</button>
+    </div>
+    <p class="warn">Keep this link private — anyone with it can see this list's upcoming dates, names and links. If it leaks, tap Regenerate link (owner only) and re-subscribe.</p>
+  </div>
   <div class="strip" id="strip" hidden><h2>⏰ Time to actually go</h2><p id="stripNote" style="margin:0 0 6px;color:var(--muted);font-size:13px">Reminders: 3 days before and 1 day before your Date to visit.</p><ul id="stripList"></ul></div>
   <div class="overdue" id="overdue" hidden><h2>⏰ Overdue — did you go?</h2><p>These places had a Date to visit that has already passed. Tap <b>We went!</b> if you went, or <b>Didn't go</b> to pick a new date.</p><ul id="overdueList"></ul></div>
   <div class="viewtoggle" role="tablist" aria-label="View">
@@ -185,7 +216,42 @@
   </form>
 </dialog>
 
-<footer>Shared household list — password protected. <a href="/api/export.csv">Download as CSV</a> (same columns as the Google Sheet backup). <a href="/logout">Log out</a> · Add this page to your home screen: iPhone Safari → Share → Add to Home Screen; Android Chrome → menu → Add to Home screen.</footer>
+
+<dialog id="manageDlg">
+  <form id="manageForm" method="dialog">
+    <button class="close" type="button" id="closeManage" aria-label="Close">×</button>
+    <h2>Manage list</h2>
+    <label for="listName">List name</label>
+    <input type="text" id="listName" maxlength="100" required>
+    <div class="err" id="manageErr"></div>
+    <button class="submit" type="submit" id="saveListName">Save name</button>
+    <h3 style="margin:22px 0 6px;font-size:16px">Shared with</h3>
+    <div id="memberList"></div>
+    <div id="shareBox" style="margin-top:12px">
+      <label for="shareUser">Share with another user (by username)</label>
+      <div style="display:flex;gap:8px"><input type="text" id="shareUser" placeholder="username" style="flex:1"><button type="button" class="chip" id="shareBtn">Share</button></div>
+      <div class="err" id="shareErr"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button type="button" id="deleteListBtn" style="flex:1;padding:14px;border-radius:12px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-size:15px;font-weight:700;cursor:pointer">Delete this list</button>
+    </div>
+    <p style="color:var(--muted);font-size:13px">Only the list owner can rename, share, or delete the list. Shared members can add and edit places, but cannot change the list itself.</p>
+  </form>
+</dialog>
+
+<dialog id="newListDlg">
+  <form id="newListForm" method="dialog">
+    <button class="close" type="button" id="closeNewList" aria-label="Close">×</button>
+    <h2>New list</h2>
+    <label for="newListName">List name</label>
+    <input type="text" id="newListName" maxlength="100" placeholder="e.g. Friends" required>
+    <div class="err" id="newListErr"></div>
+    <button class="submit" type="submit">Create list</button>
+  </form>
+</dialog>
+
+<footer>Your lists — each list has its own members and its own calendar feed. <a href="#" id="exportCsv">Download this list as CSV</a>. <a href="/logout">Log out</a> · Add this page to your home screen: iPhone Safari → Share → Add to Home Screen; Android Chrome → menu → Add to Home screen.</footer>
+<div style="max-width:1060px;margin:0 auto;padding:0 18px 40px;text-align:center;font-size:14px"><a href="mailto:dplex17@gmail.com?subject=Advertise%20with%20Places%20to%20Go" style="color:var(--accent-d);font-weight:700">Advertise with us</a></div>
 
 <dialog id="goAgainDlg">
   <form id="goAgainForm" method="dialog">
@@ -203,7 +269,8 @@
 </dialog>
 
 <script>
-let places=[], filter="all", editingId=null, previewImg="";
+let places=[], lists=[], currentList=null, filter="all", editingId=null, previewImg="";
+let me=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let view="list";
 const _now=new Date();
@@ -339,7 +406,111 @@ function visitCount(p){
   if(!c) return "";
   return c===1?"Visited 1 time":`Visited ${c} times`;
 }
-async function load(){places=await (await fetch("/api/places")).json(); render();}
+async function loadLists(){
+  const r=await fetch("/api/lists");
+  if(!r.ok){ if(r.status===401) location.href="/login"; return; }
+  lists=await r.json();
+  if(!lists.length){ currentList=null; places=[]; render(); return; }
+  const saved=localStorage.getItem("ptg-list");
+  currentList=lists.find(l=>String(l.id)===String(saved))||lists[0];
+  const sel=$("#listSel");
+  sel.innerHTML=lists.map(l=>`<option value="${l.id}" ${l.id===currentList.id?"selected":""}>${esc(l.name)}${l.my_role==="owner"?"":" (shared by "+esc(l.owner_name)+")"}</option>`).join("");
+  $("#listOwner").textContent=currentList.my_role==="owner"?"You own this list":"Shared with you by "+currentList.owner_name;
+  await loadFeed();
+  await load();
+}
+async function loadFeed(){
+  if(!currentList){ $("#sync").hidden=true; return; }
+  const r=await fetch(`/api/lists/${currentList.id}/calendar-feed`);
+  if(!r.ok){ $("#sync").hidden=true; return; }
+  const d=await r.json();
+  $("#sync").hidden=false;
+  $("#feedUrl").value=d.feed_url;
+  $("#subscribeFeed").href=d.webcal_url;
+  $("#regenFeed").style.display=currentList.my_role==="owner"?"":"none";
+}
+async function load(){
+  if(!currentList){ places=[]; render(); return; }
+  const r=await fetch(`/api/lists/${currentList.id}/places`);
+  if(!r.ok){ if(r.status===401) location.href="/login"; return; }
+  places=await r.json(); render();
+}
+$("#listSel").addEventListener("change",e=>{
+  localStorage.setItem("ptg-list", e.target.value);
+  loadLists();
+});
+$("#exportCsv").addEventListener("click",e=>{
+  e.preventDefault();
+  if(currentList) location.href=`/api/lists/${currentList.id}/export.csv`;
+});
+$("#copyFeed").addEventListener("click",async()=>{
+  const el=$("#feedUrl"); el.select();
+  try{ await navigator.clipboard.writeText(el.value); $("#copyFeed").textContent="Copied!"; setTimeout(()=>$("#copyFeed").textContent="Copy link",1500); }
+  catch(e){ document.execCommand("copy"); }
+});
+$("#regenFeed").addEventListener("click",async()=>{
+  if(!confirm("Regenerate this list's calendar link? The old link will stop working and everyone subscribed must re-subscribe.")) return;
+  const r=await fetch(`/api/lists/${currentList.id}/calendar/regenerate`,{method:"POST"});
+  if(!r.ok){ const d=await r.json().catch(()=>({})); alert(d.error||"Couldn't regenerate the link."); return; }
+  await loadLists();
+});
+$("#newListBtn").addEventListener("click",()=>{ $("#newListName").value=""; $("#newListErr").style.display="none"; $("#newListDlg").showModal(); });
+$("#closeNewList").addEventListener("click",()=>$("#newListDlg").close());
+$("#newListForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const name=$("#newListName").value.trim();
+  const err=$("#newListErr"); err.style.display="none";
+  if(!name){ err.textContent="Give the list a name."; err.style.display="block"; return; }
+  const r=await fetch("/api/lists",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+  if(!r.ok){ const d=await r.json().catch(()=>({})); err.textContent=d.error||"Couldn't create the list."; err.style.display="block"; return; }
+  const created=await r.json();
+  localStorage.setItem("ptg-list", String(created.id));
+  $("#newListDlg").close(); loadLists();
+});
+function openManage(){
+  if(!currentList) return;
+  const isOwner=currentList.my_role==="owner";
+  $("#listName").value=currentList.name;
+  $("#listName").disabled=!isOwner;
+  $("#saveListName").style.display=isOwner?"":"none";
+  $("#shareBox").style.display=isOwner?"":"none";
+  $("#deleteListBtn").style.display=isOwner?"":"none";
+  $("#memberList").innerHTML=currentList.members.map(m=>`<div class="memberrow"><span class="nm">${esc(m.username)}${m.role==="owner"?" — owner":""}</span>${isOwner&&m.role!=="owner"?`<button type="button" class="chip" data-unshare="${m.id}">Remove</button>`:""}</div>`).join("");
+  $("#manageErr").style.display="none"; $("#shareErr").style.display="none";
+  $("#manageDlg").showModal();
+}
+$("#manageListBtn").addEventListener("click",openManage);
+$("#closeManage").addEventListener("click",()=>$("#manageDlg").close());
+$("#memberList").addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-unshare]"); if(!b) return;
+  const r=await fetch(`/api/lists/${currentList.id}/share/${b.dataset.unshare}`,{method:"DELETE"});
+  if(!r.ok){ const d=await r.json().catch(()=>({})); alert(d.error||"Couldn't remove that person."); return; }
+  currentList=await r.json(); lists=lists.map(l=>l.id===currentList.id?currentList:l); openManage(); loadLists();
+});
+$("#shareBtn").addEventListener("click",async()=>{
+  const username=$("#shareUser").value.trim();
+  const err=$("#shareErr"); err.style.display="none";
+  if(!username){ err.textContent="Type a username first."; err.style.display="block"; return; }
+  const r=await fetch(`/api/lists/${currentList.id}/share`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username})});
+  if(!r.ok){ const d=await r.json().catch(()=>({})); err.textContent=d.error||"Couldn't share the list."; err.style.display="block"; return; }
+  currentList=await r.json(); lists=lists.map(l=>l.id===currentList.id?currentList:l);
+  $("#shareUser").value=""; openManage(); loadLists();
+});
+$("#manageForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const name=$("#listName").value.trim();
+  const err=$("#manageErr"); err.style.display="none";
+  const r=await fetch(`/api/lists/${currentList.id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+  if(!r.ok){ const d=await r.json().catch(()=>({})); err.textContent=d.error||"Couldn't rename the list."; err.style.display="block"; return; }
+  $("#manageDlg").close(); loadLists();
+});
+$("#deleteListBtn").addEventListener("click",async()=>{
+  if(!confirm(`Delete the list "${currentList.name}" and all its places and photos? This cannot be undone.`)) return;
+  const r=await fetch(`/api/lists/${currentList.id}`,{method:"DELETE"});
+  if(!r.ok){ const d=await r.json().catch(()=>({})); alert(d.error||"Couldn't delete the list."); return; }
+  localStorage.removeItem("ptg-list");
+  $("#manageDlg").close(); loadLists();
+});
 function render(){
   /* Local calendar date, not UTC: a place dated today is NOT
      overdue, and the 3-day / 1-day strip counts from today local.
@@ -530,7 +701,7 @@ $("#goAgainForm").addEventListener("submit",async e=>{
   const _d=new Date(visitDate+"T12:00:00Z"); calYear=_d.getUTCFullYear(); calMonth=_d.getUTCMonth(); selectedDay=visitDate;
   goAgainId=null; $("#goAgainDlg").close(); load();
 });
-$("#openAdd").addEventListener("click",()=>{editingId=null; $("#dlgTitle").textContent="Add a place";
+$("#openAdd").addEventListener("click",()=>{if(!currentList){alert("Create a list first.");return;}editingId=null; $("#dlgTitle").textContent="Add a place";
   $("#addForm").reset(); segSet("catSeg","Dating"); segSet("typeSeg","Food");
   $("#preview").hidden=true; previewImg=""; $("#err").style.display="none"; $("#dlg").showModal();});
 $("#closeDlg").addEventListener("click",()=>$("#dlg").close());
@@ -559,7 +730,7 @@ $("#addForm").addEventListener("submit",async e=>{
   if(clash){err.textContent=clashMessage(clash, visitDate); err.style.display="block"; return;}
   const body={link:$("#link").value.trim(),name,category:segVal("catSeg"),type:segVal("typeSeg"),
     visit_date:visitDate,image_url:previewImg};
-  const url=editingId?`/api/places/${editingId}`:"/api/places";
+  const url=editingId?`/api/places/${editingId}`:`/api/lists/${currentList.id}/places`;
   const r=await fetch(url,{method:editingId?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok){const d=await r.json().catch(()=>({})); err.textContent=d.error||"Something went wrong. Please try again."; err.style.display="block"; return;}
   const _vd=$("#visitDate").value;
@@ -578,7 +749,8 @@ $("#goAgainDate").addEventListener("change",()=>{
   if(clash){err.textContent=clashMessage(clash, v); err.style.display="block";}
   else{err.style.display="none";}
 });
-load();
+fetch("/api/me").then(r=>r.json()).then(d=>{ me=d; $("#meName").textContent=d.username; }).catch(()=>{});
+loadLists();
 </script>
 </body>
 </html>
