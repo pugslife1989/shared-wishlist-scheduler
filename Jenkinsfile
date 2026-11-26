@@ -20,9 +20,22 @@ pipeline {
       }
     }
 
+
     stage('smoke test'){
       steps {
         sh './smoke-test.sh'
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+       sh 'cd /wishlist-scheduler && docker compose -d --build'
+      }
+    }
+
+    stage('Health Check'){
+      steps {
+        sh 'sleep 10 && docker run --rm --network host curlimages/curl -f http://localhost:5000/healthz'
       }
     }
   }
