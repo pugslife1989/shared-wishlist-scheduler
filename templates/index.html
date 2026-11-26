@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#e4572e">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/icon-180-v2.png">
 <title>Places to Go</title>
 <style>
   :root{--ink:#1c1917;--muted:#78716c;--bg:#faf7f2;--card:#fff;--line:#e7e0d6;
@@ -751,6 +754,11 @@ $("#goAgainDate").addEventListener("change",()=>{
 });
 fetch("/api/me").then(r=>r.json()).then(d=>{ me=d; $("#meName").textContent=d.username; }).catch(()=>{});
 loadLists();
+// PWA: register the service worker (app shell only — lists, login
+// and photos are never cached, they always go to the network).
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(()=>{});
+}
 </script>
 </body>
 </html>

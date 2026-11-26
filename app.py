@@ -222,9 +222,9 @@ def require_login():
     # Health check stays open; auth pages are open; calendar feeds
     # are open — they do their own per-list token check (Apple
     # Calendar cannot log in). Everything else needs a login.
-    if request.endpoint in ("healthz", "login", "signup", "logout", "calendar_feed", "calendar_feed_legacy"):
+    if request.endpoint in ("healthz", "login", "signup", "logout", "calendar_feed", "calendar_feed_legacy", "static", "sw"):
         return None
-    if request.path in ("/login", "/signup", "/logout") or request.path.startswith("/calendar/"):
+    if request.path in ("/login", "/signup", "/logout", "/sw.js", "/manifest.webmanifest") or request.path.startswith("/calendar/") or request.path.startswith("/static/"):
         return None
     if request.path.startswith("/api/"):
         return jsonify({"error": "Please log in first."}), 401
@@ -243,6 +243,11 @@ a{color:#c7431f}"""
 def auth_page(title, subtitle, action, button, alt_link):
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#e4572e">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/icon-180-v2.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Places to Go — {title}</title><style>{AUTH_STYLE}</style></head>
 <body><main><h1>Places to Go</h1><p>{subtitle}</p>
 <form method="post"><input name="username" placeholder="Username" required autofocus maxlength="50">
@@ -541,6 +546,13 @@ def too_large(_exc):
 @app.route("/")
 def index():
     return send_from_directory("templates", "index.html")
+
+
+@app.route("/sw.js")
+def sw():
+    # Service worker must be served from / (not /static/) so its
+    # scope covers the whole app.
+    return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
 
 @app.route("/healthz")
@@ -907,10 +919,12 @@ def _ics_fold(line):
 
 
 def build_ics(rows):
-    """All-day events for every Want-to-go place in one list.
+    """Timed events (9am-10am Asia/Singapore) for every Want-to-go place
+    in one list — not all-day events, so alerts fire at 9am, not midnight.
     UID is stable per place (place-<id>@places-to-go), so a date
     change updates the same event instead of duplicating it.
-    Each event carries VALARM TRIGGER:-P3D and TRIGGER:-P1D."""
+    Each event carries VALARM TRIGGER:-P3D and TRIGGER:-P1D, which
+    now fire at 9am 3 days / 1 day before the visit."""
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     lines = [
         "BEGIN:VCALENDAR",
@@ -919,6 +933,16 @@ def build_ics(rows):
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
         "X-WR-CALNAME:Places to Go",
+        "X-WR-TIMEZONE:Asia/Singapore",
+        "BEGIN:VTIMEZONE",
+        "TZID:Asia/Singapore",
+        "BEGIN:STANDARD",
+        "DTSTART:19700101T000000",
+        "TZOFFSETFROM:+0800",
+        "TZOFFSETTO:+0800",
+        "TZNAME:SGT",
+        "END:STANDARD",
+        "END:VTIMEZONE",
     ]
     for r in rows:
         visit = valid_visit_date(r["visit_date"] if "visit_date" in r.keys() else None) or \
@@ -926,14 +950,13 @@ def build_ics(rows):
         if not visit:
             continue
         start = date.fromisoformat(visit)
-        end = start + timedelta(days=1)
         desc = f"{r['category']} · {r['type']}\n{r['link']}"
         for line in (
             "BEGIN:VEVENT",
             f"UID:place-{r['id']}@places-to-go",
             f"DTSTAMP:{stamp}",
-            f"DTSTART;VALUE=DATE:{start.strftime('%Y%m%d')}",
-            f"DTEND;VALUE=DATE:{end.strftime('%Y%m%d')}",
+            f"DTSTART;TZID=Asia/Singapore:{start.strftime('%Y%m%d')}T090000",
+            f"DTEND;TZID=Asia/Singapore:{start.strftime('%Y%m%d')}T100000",
             f"SUMMARY:{_ics_escape(r['name'])}",
             f"DESCRIPTION:{_ics_escape(desc)}",
             f"URL:{r['link']}",
