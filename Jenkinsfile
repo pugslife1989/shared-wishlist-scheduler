@@ -29,7 +29,7 @@ pipeline {
 
     stage('Deploy') {
       steps {
-       sh 'cd /wishlist-scheduler && docker compose -d --build'
+       sh 'cd /wishlist-scheduler && docker compose up -d --build'
       }
     }
 
