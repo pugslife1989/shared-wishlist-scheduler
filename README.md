@@ -16,6 +16,7 @@ A lightweight, self-hosted web app built with **Flask, SQLite, Gunicorn, and Doc
 * **Backend:** Python 3.12, Flask, Gunicorn
 * **Database & Storage:** SQLite (`places.db`) + persistent volume storage for photos
 * **Deployment & Networking:** Docker, Docker Compose, Cloudflare, Tailscale
+* **CI/CD:** GitHub Actions (CI), Jenkins (CI/CD on homelab)
 
 ---
 
@@ -26,6 +27,13 @@ A lightweight, self-hosted web app built with **Flask, SQLite, Gunicorn, and Doc
 
 ---
 
+## CI/CD
+
+* **GitHub Actions — CI:** Python syntax check (`python -m py_compile app.py`), Docker image build, smoke test (`curl -f http://localhost:5000/healthz`). Workflow: `.github/workflows/ci.yml`
+* **Jenkins — CI/CD:** Runs on the homelab in Docker (port 8082, `jenkins/jenkins:lts`). Pipeline (`Jenkinsfile`): Checkout, Python check, Docker build, Smoke test (`smoke-test.sh`). Deploy stage next.
+* **Smoke test:** Builds the image, runs it in a throwaway container with a dummy `SECRET_KEY`, checks `/healthz`, then stops and removes the container. Live site is not touched.
+
+---
 
 ## Project Roadmap
 
@@ -34,3 +42,7 @@ A lightweight, self-hosted web app built with **Flask, SQLite, Gunicorn, and Doc
 - [x] "We went!" status toggle with photo memory uploads
 - [x] Containerized deployment with Gunicorn, Docker Compose, Cloudflare & Tailscale
 - [x] Auto-fetch link previews (title & thumbnail metadata)
+- [x] GitHub Actions CI — syntax check, Docker build, smoke test
+- [x] Jenkins running on homelab — CI pipeline (Checkout, Python check, Docker build, Smoke test)
+- [ ] Jenkins CD — deploy to live site (`docker compose up -d --build` + `/healthz` check)
+- [ ] Trivy image scan in CI
