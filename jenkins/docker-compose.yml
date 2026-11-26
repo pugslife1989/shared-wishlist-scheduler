@@ -5,6 +5,9 @@ services:
 
       image: jenkins/jenkins:lts
 
+      group_add:
+        - 107
+      
       restart: unless-stopped
 
       ports:
