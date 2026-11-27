@@ -20,6 +20,11 @@ pipeline {
       }
     }
 
+    stage('Trivy scan'){
+      steps {
+        sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity CRITICAL,HIGH --exit-code 1 wishlist:test'
+      }
+    }    
 
     stage('smoke test'){
       steps {
