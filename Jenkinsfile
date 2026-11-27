@@ -22,7 +22,7 @@ pipeline {
 
     stage('Trivy scan'){
       steps {
-         sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity CRITICAL,HIGH --exit-code 1 --pkg-types library --skip-dirs usr/local/lib/python3.13/site-packages/pip/_vendor --skip-dirs usr/local/lib/python3.13/site-packages/setuptools/_vendor wishlist:test'    
+        sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity CRITICAL,HIGH --exit-code 1 --pkg-types library wishlist:test'
       }
     }    
 
