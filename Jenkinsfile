@@ -16,7 +16,7 @@ pipeline {
 
     stage('Docker build'){
       steps {
-	sh 'docker build -t wishlist:test .'
+	sh 'docker build --no-cache -t wishlist:test .'
       }
     }
 
