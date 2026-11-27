@@ -27,6 +27,14 @@ jobs:
       - name: Test Docker image build
         run: docker build -t shared-wishlist-scheduler:test .
 
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'shared-wishlist-scheduler:test'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
       - name: Smoke test
         run: |
           docker run -d --name wishlist-test -e SECRET_KEY=test-secret-for-ci -p 5000:5000 shared-wishlist-scheduler:test
